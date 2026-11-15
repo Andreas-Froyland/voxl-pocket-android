@@ -296,12 +296,16 @@ private fun Chrome(remote: RemoteView, onBack: () -> Unit, modifier: Modifier) {
     var textSize by remember { mutableIntStateOf(remote.textSize) }
     Row(modifier.safeDrawingPadding().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         ChromeButton("‹", "Hosts", onBack)
-        if (remote.displays > 1) Box {
+        val displays = remote.displays
+        if (displays.canSwitch) Box {
             ChromeButton("⧉", "Display") { displayMenu = true }
             DropdownMenu(displayMenu, { displayMenu = false }) {
-                for (i in 0 until remote.displays) DropdownMenuItem(
-                    text = { Text((if (i == remote.display) "✓ " else "") + if (i == 0) "Display 1 (main)" else "Display ${i + 1}") },
-                    onClick = { displayMenu = false; if (i != remote.display) remote.session.send("dp,$i") },
+                for (d in displays.available) DropdownMenuItem(
+                    text = { Text((if (d.id == displays.selected) "✓ " else "") + d.name) },
+                    onClick = {
+                        displayMenu = false
+                        if (d.id != displays.selected) remote.session.selectDisplay(displays, d.id)
+                    },
                 )
             }
         }

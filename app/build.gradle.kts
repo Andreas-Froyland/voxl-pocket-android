@@ -51,4 +51,5 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.okhttp)
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
 }

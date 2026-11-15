@@ -12,7 +12,8 @@ desktop server. Built for tablets and foldables, works on phones.
   sticky Shift/Cmd/Ctrl/Opt, ⌘Space, ⌘Tab and arrows
 - Keeps the host at its own resolution by default; can resize it to fit the device
   (Large, Medium, pixel perfect) when the server runs with `--enable-resize`
-- Switch between the host's displays
+- Switch between the host's displays, on Mac and Windows hosts (Windows needs a voxl
+  with live display switching, such as [this fork](https://github.com/Andreas-Froyland/voxl/tree/windows-display-switch))
 - Clipboard both ways, text and images
 - Split screen and any orientation
 
