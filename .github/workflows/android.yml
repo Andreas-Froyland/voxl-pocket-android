@@ -5,6 +5,7 @@ on:
     branches: [main]
     tags: ["v*"]
   pull_request:
+  workflow_dispatch: # build an APK from any branch, from the Actions tab
 
 permissions:
   contents: write # attach the APK to releases
