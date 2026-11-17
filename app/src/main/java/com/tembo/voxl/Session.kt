@@ -355,7 +355,7 @@ class Session(private val ctx: Context, val host: Host, private val listener: Li
             // ponytail: keeps the last 5; older clips in clipboard history stop resolving.
             val dir = File(ctx.cacheDir, "clip").apply { mkdirs() }
             val f = File.createTempFile("clip-", ".png", dir).apply { writeBytes(png) } // unique name
-            val uri = FileProvider.getUriForFile(ctx, "com.tembo.voxl.clip", f)
+            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.clip", f)
             clipboard.setPrimaryClip(fromHost(ClipData.newUri(ctx.contentResolver, "voxl image", uri)))
             // Pruned only once the new image is published; the oldest go first.
             dir.listFiles()?.sortedBy { it.lastModified() }?.dropLast(5)?.forEach { it.delete() }

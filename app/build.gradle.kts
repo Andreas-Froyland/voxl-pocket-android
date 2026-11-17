@@ -7,11 +7,12 @@ android {
     namespace = "com.tembo.voxl"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.tembo.voxl"
+        // Its own id, so it installs beside upstream's Voxl Pocket (com.tembo.voxl).
+        applicationId = "io.frogbyte.voxlpocket"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1"
+        versionCode = 2
+        versionName = "0.2"
     }
     // Release signing comes from the environment (CI secrets); without it, release builds
     // are signed with the debug key so they still install for local testing.

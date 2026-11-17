@@ -3,6 +3,10 @@
 A native Android client for [voxl](https://github.com/tembo/voxl), the low-latency remote
 desktop server. Built for tablets and foldables, works on phones.
 
+**Voxl Pocket+** is a fork of [ericmigi/voxl-pocket-android](https://github.com/ericmigi/voxl-pocket-android)
+that switches between a host's monitors with voxl's current protocol, including on Windows
+hosts. It installs as `io.frogbyte.voxlpocket`, beside the original app.
+
 ## Features
 
 - H.264 video decoded with MediaCodec, one decoder per stripe, straight to the screen
