@@ -125,8 +125,8 @@ class Stripe(val y: Int, val height: Int, val width: Int) {
 /** WebSocket connection to the voxl host. Listener calls arrive on the main thread. */
 class Session(private val ctx: Context, val host: Host, private val listener: Listener) {
     interface Listener {
-        /** `displays`/`display`: how many displays the host can stream and which one this is. */
-        fun onHello(width: Int, height: Int, stripes: List<Stripe>, resizeScale: Double?, displays: Int, display: Int)
+        /** `displays`: the displays the host can stream, and which one this is. */
+        fun onHello(width: Int, height: Int, stripes: List<Stripe>, resizeScale: Double?, displays: Displays)
         fun onCursor(image: Bitmap?, hotX: Int, hotY: Int)
         fun onState(text: String?)
         /** The host refused the saved password, which is now forgotten. */
@@ -141,6 +141,8 @@ class Session(private val ctx: Context, val host: Host, private val listener: Li
     private var lastKeyRequest = 0L
     private var keyRetryPosted = false
     private var stopped = true
+    /** Until then, a `close` from the host follows our display switch (macOS) and we reconnect. */
+    private var switchUntil = 0L
     private val clipboard = ctx.getSystemService(ClipboardManager::class.java)
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener { sendClipboard() }
     private val prefs = ctx.getSharedPreferences("session", Context.MODE_PRIVATE)
@@ -211,6 +213,14 @@ class Session(private val ctx: Context, val host: Host, private val listener: Li
         stripes = emptyList()
     }
 
+    /** Asks the host to stream display `id`; returns whether the request was sent. */
+    fun selectDisplay(displays: Displays, id: Int): Boolean {
+        if (!send(displays.command(id))) return false
+        // A Windows host sends a new hello; a macOS host closes every connection first.
+        switchUntil = SystemClock.uptimeMillis() + 10_000
+        return true
+    }
+
     /** Returns whether the message was queued (false while disconnected). */
     fun send(s: String): Boolean = connected && ws?.send(s) == true
 
@@ -273,12 +283,13 @@ class Session(private val ctx: Context, val host: Host, private val listener: Li
                 stripes = next
                 pending.clear()
                 val scale = j.optJSONObject("resize")?.optDouble("scale")?.takeIf { !it.isNaN() }
-                val displays = j.optInt("displays", 1); val display = j.optInt("display", 0)
+                val displays = Displays.parse(j)
                 main.post {
                     old.forEach { it.setSurface(null) }
                     if (sock !== ws) return@post
                     listener.onState(null)
-                    listener.onHello(w, h, next, scale, displays, display)
+                    switchUntil = 0
+                    listener.onHello(w, h, next, scale, displays)
                     sendClipboard() // anything copied on the device while disconnected
                 }
             }
@@ -290,6 +301,12 @@ class Session(private val ctx: Context, val host: Host, private val listener: Li
                 }
             }
             "close" -> post(sock) {
+                if (SystemClock.uptimeMillis() < switchUntil) {
+                    switchUntil = 0
+                    sock.cancel()
+                    dropped(retry = true)
+                    return@post
+                }
                 stop()
                 listener.onState("Closed by host. Tap to reconnect.")
             }
@@ -338,7 +355,7 @@ class Session(private val ctx: Context, val host: Host, private val listener: Li
             // ponytail: keeps the last 5; older clips in clipboard history stop resolving.
             val dir = File(ctx.cacheDir, "clip").apply { mkdirs() }
             val f = File.createTempFile("clip-", ".png", dir).apply { writeBytes(png) } // unique name
-            val uri = FileProvider.getUriForFile(ctx, "com.tembo.voxl.clip", f)
+            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.clip", f)
             clipboard.setPrimaryClip(fromHost(ClipData.newUri(ctx.contentResolver, "voxl image", uri)))
             // Pruned only once the new image is published; the oldest go first.
             dir.listFiles()?.sortedBy { it.lastModified() }?.dropLast(5)?.forEach { it.delete() }

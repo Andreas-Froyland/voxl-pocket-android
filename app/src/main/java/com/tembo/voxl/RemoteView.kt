@@ -48,7 +48,7 @@ class RemoteView(context: Context, host: Host, private val onAuthFailed: () -> U
 
     // Read by the Compose chrome.
     var status by mutableStateOf<String?>("Connecting…")
-    var displays by mutableIntStateOf(1)
+    var displays by mutableStateOf(Displays.NONE)
     var display by mutableIntStateOf(0)
     var trackpad by mutableStateOf(true)
     var stickyMods by mutableStateOf(setOf<Int>())
@@ -110,8 +110,8 @@ class RemoteView(context: Context, host: Host, private val onAuthFailed: () -> U
 
     // MARK: Session.Listener
 
-    override fun onHello(width: Int, height: Int, stripes: List<Stripe>, resizeScale: Double?, displays: Int, display: Int) {
-        this.displays = displays; this.display = display
+    override fun onHello(width: Int, height: Int, stripes: List<Stripe>, resizeScale: Double?, displays: Displays) {
+        this.displays = displays; this.display = displays.selected
         W = width; H = height
         desk.removeAllViews()
         for (s in stripes) desk.addView(stripeView(s), LayoutParams(s.width, s.height).apply { topMargin = s.y })
